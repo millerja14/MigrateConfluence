@@ -1,0 +1,23 @@
+{
+  "name": "migrate-confluence",
+  "version": "1.0.0",
+  "description": "This package converts a Confluence wiki export to a format that can be imported by WikiJS.",
+  "main": "migrate-confluence.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/millerja14/MigrateConfluence.git"
+  },
+  "author": "Jacob M. Miller",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/millerja14/MigrateConfluence/issues"
+  },
+  "homepage": "https://github.com/millerja14/MigrateConfluence#readme",
+  "dependencies": {
+    "js-beautify": "^1.14.4",
+    "node-html-parser": "^5.3.3"
+  }
+}
