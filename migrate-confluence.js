@@ -5,8 +5,8 @@
 // requirements
 const path = require('path');
 const fs = require('fs');
-var HTMLParser = require('/usr/lib/node_modules/node-html-parser');
-var beautify = require('/usr/lib/node_modules/js-beautify').html;
+var HTMLParser = require('node-html-parser');
+var beautify = require('js-beautify').html;
 
 // cli arguments
 const directoryPath = process.argv[2];
