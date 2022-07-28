@@ -14,12 +14,23 @@ var beautify = require('/usr/lib/node_modules/js-beautify').html;
 const directoryPath = process.argv[2]; //directory containing Confluence html files and assets
 const outDirectoryPath = process.argv[3]; //directory for wikijs to scrape
 
+// div id specifying container for page contents to convert
+const containerid = "#content";
+//const containerid = "#main-content";
+
 // regex for invalid characters in filenames
 const invalidchar = /[`~!@#$%^&*()|+\=?;:'",<>\{\}\[\]\\\/]/gi;
 
 const copylog = "copyfiles.txt"
 try {
   fs.unlinkSync(copylog);
+} catch (err) {
+  if (err.code != 'ENOENT') throw err;
+}
+
+const lostlog = "lostfiles.txt"
+try {
+  fs.unlinkSync(lostlog);
 } catch (err) {
   if (err.code != 'ENOENT') throw err;
 }
@@ -31,6 +42,7 @@ if (fs.existsSync(outDirectoryPath)) {
     console.log("Directory does not exist. Creating " + outDirectoryPath);
     fs.mkdirSync(outDirectoryPath, {recursive: true});
   }
+console.log("Beginning conversion...")
 
 fs.readdir(directoryPath, function (err, files) {
     //handling error
@@ -49,7 +61,7 @@ fs.readdir(directoryPath, function (err, files) {
                 page_title = parsedHtml.querySelector("head").querySelector("title").rawText;
                 page_title = page_title.substr(page_title.search(" : ") + 3);
                 page_title_spaces = page_title.replace(/[_\s\.]/g, ' ');
-                page_title = page_title.replace(invalidchar, '').replace(/[_\s]/g, '-').replace(/\./g, '').replace(/\u03BC|\u00B5/g, "u");
+                page_title = page_title.trim().replace(invalidchar, '').replace(/[_\s]/g, '-').replace(/\./g, '').replace(/\u03BC|\u00B5/g, "u");
 
                 // generate tag that wikijs uses to read page title
                 page_data = "<!--\ntitle: " + page_title_spaces + "\n-->";
@@ -77,7 +89,7 @@ fs.readdir(directoryPath, function (err, files) {
                 //
 
                 // get all elements with src tag
-                srcelements = parsedHtml.querySelector("#main-content").querySelectorAll("[src]");
+                srcelements = parsedHtml.querySelector(containerid).querySelectorAll("[src]");
 
                 // regex for possible attachment directories
                 // based on Confluence export format as of July 2022
@@ -143,7 +155,8 @@ fs.readdir(directoryPath, function (err, files) {
                       srcelements[i].setAttribute("src", "/"+page_path+srcfilename+srcext);
                     } else {
                       console.log("Couldn't move " + assetsource + " to " + assetdest);
-                      console.log(err.code);
+                      fs.appendFileSync(lostlog, page_title_spaces +": " + srcfilename+srcext + "\n");
+                      console.log("Missing file on page " + page_title_spaces);
                     }
                   }
                 }
@@ -155,7 +168,7 @@ fs.readdir(directoryPath, function (err, files) {
                 //
 
                 // get elements that are displayed as previews in confluence
-                previewelements = parsedHtml.querySelector("#main-content").querySelectorAll(".confluence-embedded-file");
+                previewelements = parsedHtml.querySelector(containerid).querySelectorAll(".confluence-embedded-file");
 
                 // resource ids are numeric
                 validresourceid = /[0-9]+/;
@@ -164,7 +177,7 @@ fs.readdir(directoryPath, function (err, files) {
 
                   // if the preview element is incomplete, skip it
                   if (previewelements[i].getAttribute("href") == undefined | previewelements[i].getAttribute("data-linked-resource-container-id") == undefined | previewelements[i].getAttribute("data-linked-resource-id") == undefined ) {
-                    console.log("Unconvertable href: " + previewelements[i].getAttribute("data-linked-resource-default-alias"));
+                    console.log("Unconvertable previewelement on page: [" + page_title + "]");
                     continue;
                   }
 
@@ -196,7 +209,8 @@ fs.readdir(directoryPath, function (err, files) {
                         previewelements[i].setAttribute("href", "/"+page_path+previewelement_filename);
                       } else {
                         console.log("Couldn't move " + assetsource + " to " + assetdest);
-                        console.log(err.code);
+                        fs.appendFileSync(lostlog, page_title_spaces +": " + previewelement_filename + "\n");
+                        console.log("Missing file on page " + page_title_spaces);
                       }
                     }
                   } else {
@@ -225,7 +239,7 @@ fs.readdir(directoryPath, function (err, files) {
                 //
 
                 // some previewed files are in a different class - specifically ppt and pdf presentations
-                pptelements = parsedHtml.querySelector("#main-content").querySelectorAll(".vf-slide-viewer-macro");
+                pptelements = parsedHtml.querySelector(containerid).querySelectorAll(".vf-slide-viewer-macro");
                 for (let i = 0; i < pptelements.length; i++) {
 
                   data_page_id = pptelements[i].getAttribute("data-page-id").trim();
@@ -256,7 +270,8 @@ fs.readdir(directoryPath, function (err, files) {
                         pptelements[i].replaceWith(HTMLParser.parse(ppt_node));
                       } else {
                         console.log("Couldn't move " + assetsource + " to " + assetdest);
-                        console.log(err);
+                        fs.appendFileSync(lostlog, page_title_spaces +": " + pptelement_filename + "\n");
+                        console.log("Missing file on page " + page_title_spaces);
                       }
                     }
                   } else {
@@ -272,7 +287,7 @@ fs.readdir(directoryPath, function (err, files) {
                 //
 
                 // get all elements with href tag
-                hrefelements = parsedHtml.querySelector("#main-content").querySelectorAll("[href]");
+                hrefelements = parsedHtml.querySelector(containerid).querySelectorAll("[href]");
 
                 // regex to distinguish html references from others
                 validhtmlpage = /^[^\/\\]+.html$/
@@ -293,7 +308,7 @@ fs.readdir(directoryPath, function (err, files) {
 
                         hrefpage_title = hrefHtml.querySelector("head").querySelector("title").rawText;
                         hrefpage_title = hrefpage_title.substr(hrefpage_title.search(" : ") + 3);
-                        hrefpage_title = hrefpage_title.replace(invalidchar, '').replace(/[_\s]/g, '-').replace(/\./g, '').replace(/\u03BC|\u00B5/g, "u");
+                        hrefpage_title = hrefpage_title.trim().replace(invalidchar, '').replace(/[_\s]/g, '-').replace(/\./g, '').replace(/\u03BC|\u00B5/g, "u");
 
                         hreffolderpath = hrefHtml.getElementById("breadcrumbs");
 
@@ -346,19 +361,49 @@ fs.readdir(directoryPath, function (err, files) {
                       // and the element's href should still be updated
                       fs.appendFileSync(copylog, assetsource + "\n");
                       hrefelements[i].setAttribute("href", "/"+page_path+hreffilename);
+
+                      // if the file is alread referenced on the page then EEXIST will be raised
+                      // if the current element is in the greybox, it can be removed
+                      // greybox should only be for files that are not linked on the page
+                      if (hrefelements[i].parentNode.classList.contains("greybox")) {
+                        hrefelements[i].remove();
+                      }
+
                     } else {
-                      console.log("Couldn't move " + assetsource + " to " + assetdest);
-                      console.log(err);
+                      if (hrefelements[i].parentNode.classList.contains("greybox")) {
+                        fs.appendFileSync(lostlog, page_title_spaces +": " + hreffilename + "(greybox)" + "\n");
+                        hrefelements[i].remove();
+                        // console.log("Greybox missing file at " + page_title_spaces);
+                      } else {
+                        console.log("Couldn't move " + assetsource + " to " + assetdest);
+                        fs.appendFileSync(lostlog, page_title_spaces +": " + hreffilename + "\n");
+                        console.log("Non-greybox missing " + hreffilename + " on page " + page_title_spaces);
+                      }
                     }
                   }
                 }
 
+                greyboxes = parsedHtml.querySelector(containerid).querySelectorAll(".greybox");
+
+                if (greyboxes.length > 1) {
+                  throw "There should not be more than one greybox! Found " + greyboxes.length;
+                }
+
+                greybox = greyboxes[0];
+
+                if (greybox != null) {
+                  greybox_imgs = greybox.querySelectorAll("img");
+                  for (let i = 0; i < greybox_imgs.length; i++) {
+                    greybox_imgs[i].remove();
+                  }
+                }
+
                 // concatenate HTML contents with page data
-                page_data = page_data + parsedHtml.querySelector("#main-content").innerHTML;
+                page_data = page_data + parsedHtml.querySelector(containerid).innerHTML;
 
                 // write page after beautifying
                 fs.writeFileSync(path.join(outDirectoryPath, page_path + page_title + ".html"), beautify(page_data, { indent_size: 2, space_in_empty_paren: true }));
-
+                console.log("Imported Page: [" + page_title + "]");
             });
         }
     });
