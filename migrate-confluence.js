@@ -82,6 +82,12 @@ fs.readdir(directoryPath, function (err, files) {
                     fs.mkdirSync(pageDirectoryPath, {recursive: true});
                 }
 
+
+                // for each page, create a dictionary of ids to filenames
+                // when moving a file, use dictionary to convert id to filename
+
+                filedict = {};
+
                 //
                 //
                 // fix images (downloads doesnt work "Cryo RuO2 Thermometer")
@@ -117,7 +123,11 @@ fs.readdir(directoryPath, function (err, files) {
                   }
 
                   // record id and extension
-                  srcid = srcnamesplit[0];
+                  srcid = srcsplit[srcsplit.length-2] + srcsplit[srcsplit.length-2].split(".")[0];
+                  if (srcid.length != 18) {
+                    console.log("Problem with src src id: " + srcid);
+                  }
+
                   if (srcnamesplit.length == 1) {
                     srcext = "";
                   } else {
@@ -128,6 +138,12 @@ fs.readdir(directoryPath, function (err, files) {
                   // set default filename
                   srcfilename = srcid;
 
+                  // if file has already been moved to this page, only need to change link
+                  if (srcid in filedict){
+                    srcelements[i].setAttribute("src", filedict[srcid]);
+                    continue;
+                  }
+
                   // try to get filename from html element
                   srcalias = srcelements[i].getAttribute("data-linked-resource-default-alias");
                   if (typeof(srcalias) != "undefined") {
@@ -136,26 +152,27 @@ fs.readdir(directoryPath, function (err, files) {
                   }
 
                   // remove invalid characters and replace whitespaces with hyphens
-                  srcfilename = srcfilename.replace(invalidchar,'').replace(/[_\s]/g, '-');
+                  srcfilename = srcfilename.replace(invalidchar,'').replace(/[_\s]/g, '-')+srcext;
 
                   // define source and destination
                   assetsource = path.join(directoryPath, src_lowerext);
-                  assetdest = path.join(outDirectoryPath, page_path+srcfilename+srcext);
+                  assetdest = path.join(outDirectoryPath, page_path+srcfilename);
 
                   // move file and rename corresponding src element
+                  filedict[srcid] = "/"+page_path+srcfilename;
                   try {
                     fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
                     fs.appendFileSync(copylog, assetsource + "\n");
-                    srcelements[i].setAttribute("src", "/"+page_path+srcfilename+srcext);
+                    srcelements[i].setAttribute("src", filedict[srcid]);
                   } catch (err) {
                     if (err.code == "EEXIST") {
                       // if the file exists already, the duplicate should still be marked as being copied
                       // and the element's src should still be updated
                       fs.appendFileSync(copylog, assetsource + "\n");
-                      srcelements[i].setAttribute("src", "/"+page_path+srcfilename+srcext);
+                      srcelements[i].setAttribute("src", filedict[srcid]);
                     } else {
                       console.log("Couldn't move " + assetsource + " to " + assetdest);
-                      fs.appendFileSync(lostlog, page_title_spaces +": " + srcfilename+srcext + "\n");
+                      fs.appendFileSync(lostlog, page_title_spaces +": " + srcfilename + "\n");
                       console.log("Missing file on page " + page_title_spaces);
                     }
                   }
@@ -189,6 +206,17 @@ fs.readdir(directoryPath, function (err, files) {
                   previewelement_filename_full = previewelements[i].getAttribute("data-linked-resource-default-alias").trim().replace(invalidchar,'').replace(/[_\s]/g, '-').replace(/\u03BC|\u00B5/g, "u");
                   previewelement_filename = previewelement_filename_full.split(".")[0]+previewelement_ext;
 
+                  srcid = data_linked_resource_container_id+data_linked_resource_id;
+                  if (srcid.length != 18) {
+                    console.log("Problem with preview element src id: " + srcid);
+                  }
+
+                  // if file has already been moved to this page, only need to change link
+                  if (srcid in filedict){
+                    previewelements[i].setAttribute("href", filedict[srcid]);
+                    continue;
+                  }
+
                   // build element source path
                   previewelement_path = "attachments/" + data_linked_resource_container_id + "/" + data_linked_resource_id + previewelement_ext;
 
@@ -196,17 +224,21 @@ fs.readdir(directoryPath, function (err, files) {
                   if (validresourceid.test(data_linked_resource_container_id) && validresourceid.test(data_linked_resource_id)) {
                     assetsource = path.join(directoryPath, previewelement_path);
                     assetdest = path.join(outDirectoryPath, page_path+previewelement_filename);
+
+                    filedict[srcid] = "/"+page_path+previewelement_filename;
+
                     try {
                       fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
                       fs.appendFileSync(copylog, assetsource + "\n");
-                      previewelements[i].setAttribute("href", "/"+page_path+previewelement_filename);
+                      previewelements[i].setAttribute("href", filedict[srcid]);
+
                       //console.log("Added resource at " + page_path+previewelement_filename);
                     } catch (err) {
                       if (err.code == "EEXIST") {
                         // if the file exists already, the duplicate should still be marked as being copied
                         // and the element's href should still be updated
                         fs.appendFileSync(copylog, assetsource + "\n");
-                        previewelements[i].setAttribute("href", "/"+page_path+previewelement_filename);
+                        previewelements[i].setAttribute("href", filedict[srcid]);
                       } else {
                         console.log("Couldn't move " + assetsource + " to " + assetdest);
                         fs.appendFileSync(lostlog, page_title_spaces +": " + previewelement_filename + "\n");
@@ -234,7 +266,7 @@ fs.readdir(directoryPath, function (err, files) {
 
                 //
                 //
-                // TODO: fix slides: vf-slide-viewer-macro (e.g., electronics/bobox)
+                // fix slides: vf-slide-viewer-macro (e.g., electronics/bobox)
                 //
                 //
 
@@ -251,14 +283,28 @@ fs.readdir(directoryPath, function (err, files) {
 
                   pptelement_path = "attachments/" + data_page_id + "/" + data_attachment_id + pptelement_ext;
 
+                  srcid = data_page_id+data_attachment_id;
+                  if (srcid.length != 18) {
+                    console.log("Problem with pptelement src id: " + srcid);
+                  }
+                  // if file has already been moved to this page, only need to change link
+                  if (srcid in filedict){
+                    ppt_node = '<a href="' + filedict[srcid] + '"><span class="title">'+pptelement_filename+'</span><br></a>';
+                    pptelements[i].replaceWith(HTMLParser.parse(ppt_node));
+                    continue;
+                  }
+
                   // move attachment to destination directory and replace preview element with a simple link element
                   if (validresourceid.test(data_page_id) && validresourceid.test(data_attachment_id)) {
                     assetsource = path.join(directoryPath, pptelement_path);
                     assetdest = path.join(outDirectoryPath, page_path+pptelement_filename);
+
+                    filedict[srcid] = "/"+page_path+pptelement_filename;
+
                     try {
                       fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
                       fs.appendFileSync(copylog, assetsource + "\n");
-                      ppt_node = '<a href="' + "/"+page_path+pptelement_filename + '"><span class="title">'+pptelement_filename+'</span><br></a>';
+                      ppt_node = '<a href="' + filedict[srcid] + '"><span class="title">'+pptelement_filename+'</span><br></a>';
                       pptelements[i].replaceWith(HTMLParser.parse(ppt_node));
                       //console.log("Added resource at " + page_path+previewelement_filename);
                     } catch (err) {
@@ -266,7 +312,7 @@ fs.readdir(directoryPath, function (err, files) {
                         // if the file exists already, the duplicate should still be marked as being copied
                         // and the element's html should still be updated
                         fs.appendFileSync(copylog, assetsource + "\n");
-                        ppt_node = '<a href="' + "/"+page_path+pptelement_filename + '"><span class="title">'+pptelement_filename+'</span><br></a>';
+                        ppt_node = '<a href="' + filedict[srcid] + '"><span class="title">'+pptelement_filename+'</span><br></a>';
                         pptelements[i].replaceWith(HTMLParser.parse(ppt_node));
                       } else {
                         console.log("Couldn't move " + assetsource + " to " + assetdest);
@@ -343,6 +389,16 @@ fs.readdir(directoryPath, function (err, files) {
                     hreffilename = hreffileid;
                   }
 
+                  srcid = hrefsplit[hrefsplit.length-2]+hrefsplit[hrefsplit.length-1].split(".")[0];
+                  if (srcid.length != 18) {
+                    console.log("Problem with href src id: " + srcid);
+                  }
+                  // if file has already been moved to this page, only need to change link
+                  if (srcid in filedict){
+                    hrefelements[i].setAttribute("href", filedict[srcid]);
+                    continue;
+                  }
+
                   // fix invalid characters in filename
                   hreffilename = hreffilename.replace(invalidchar,'').replace(/[_\s]/g, '-');
 
@@ -351,16 +407,17 @@ fs.readdir(directoryPath, function (err, files) {
                   assetdest = path.join(outDirectoryPath, page_path+hreffilename);
 
                   // move file and change href link
+                  filedict[srcid] = "/"+page_path+hreffilename;
                   try {
                     fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
                     fs.appendFileSync(copylog, assetsource + "\n");
-                    hrefelements[i].setAttribute("href", "/"+page_path+hreffilename);
+                    hrefelements[i].setAttribute("href", filedict[srcid]);
                   } catch (err) {
                     if (err.code == "EEXIST") {
                       // if the file exists already, the duplicate should still be marked as being copied
                       // and the element's href should still be updated
                       fs.appendFileSync(copylog, assetsource + "\n");
-                      hrefelements[i].setAttribute("href", "/"+page_path+hreffilename);
+                      hrefelements[i].setAttribute("href", filedict[srcid]);
 
                       // if the file is alread referenced on the page then EEXIST will be raised
                       // if the current element is in the greybox, it can be removed
