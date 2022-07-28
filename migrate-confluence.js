@@ -1,19 +1,28 @@
-// Script for converting Confluence wiki export to wikijs
+// Converts Confluence wiki export to wikijs
 // Written by Jacob M. Miller, Cleland Lab, UChicago
-// Inspired by https://github.com/gkpln3/ConfluenceToWikiJS
+// Forked from https://github.com/gkpln3/ConfluenceToWikiJS
 
 // requirements
 const path = require('path');
 const fs = require('fs');
-var HTMLParser = require('node-html-parser');
-var beautify = require('js-beautify').html;
+//var HTMLParser = require('node-html-parser');
+//var beautify = require('js-beautify').html;
+var HTMLParser = require('/usr/lib/node_modules/node-html-parser');
+var beautify = require('/usr/lib/node_modules/js-beautify').html;
 
 // cli arguments
-const directoryPath = process.argv[2];
-const outDirectoryPath = process.argv[3];
+const directoryPath = process.argv[2]; //directory containing Confluence html files and assets
+const outDirectoryPath = process.argv[3]; //directory for wikijs to scrape
 
 // regex for invalid characters in filenames
 const invalidchar = /[`~!@#$%^&*()|+\=?;:'",<>\{\}\[\]\\\/]/gi;
+
+const copylog = "copyfiles.txt"
+try {
+  fs.unlinkSync(copylog);
+} catch (err) {
+  if (err.code != 'ENOENT') throw err;
+}
 
 // make output directory if it doesn't exist
 if (fs.existsSync(outDirectoryPath)) {
@@ -124,9 +133,15 @@ fs.readdir(directoryPath, function (err, files) {
                   // move file and rename corresponding src element
                   try {
                     fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
+                    fs.appendFileSync(copylog, assetsource + "\n");
                     srcelements[i].setAttribute("src", "/"+page_path+srcfilename+srcext);
                   } catch (err) {
-                    if (err.code !== "EEXIST") {
+                    if (err.code == "EEXIST") {
+                      // if the file exists already, the duplicate should still be marked as being copied
+                      // and the element's src should still be updated
+                      fs.appendFileSync(copylog, assetsource + "\n");
+                      srcelements[i].setAttribute("src", "/"+page_path+srcfilename+srcext);
+                    } else {
                       console.log("Couldn't move " + assetsource + " to " + assetdest);
                       console.log(err.code);
                     }
@@ -170,12 +185,18 @@ fs.readdir(directoryPath, function (err, files) {
                     assetdest = path.join(outDirectoryPath, page_path+previewelement_filename);
                     try {
                       fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
+                      fs.appendFileSync(copylog, assetsource + "\n");
                       previewelements[i].setAttribute("href", "/"+page_path+previewelement_filename);
                       //console.log("Added resource at " + page_path+previewelement_filename);
                     } catch (err) {
-                      if (err.code !== "EEXIST") {
+                      if (err.code == "EEXIST") {
+                        // if the file exists already, the duplicate should still be marked as being copied
+                        // and the element's href should still be updated
+                        fs.appendFileSync(copylog, assetsource + "\n");
+                        previewelements[i].setAttribute("href", "/"+page_path+previewelement_filename);
+                      } else {
                         console.log("Couldn't move " + assetsource + " to " + assetdest);
-                        console.log(err);
+                        console.log(err.code);
                       }
                     }
                   } else {
@@ -222,11 +243,18 @@ fs.readdir(directoryPath, function (err, files) {
                     assetdest = path.join(outDirectoryPath, page_path+pptelement_filename);
                     try {
                       fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
+                      fs.appendFileSync(copylog, assetsource + "\n");
                       ppt_node = '<a href="' + "/"+page_path+pptelement_filename + '"><span class="title">'+pptelement_filename+'</span><br></a>';
                       pptelements[i].replaceWith(HTMLParser.parse(ppt_node));
                       //console.log("Added resource at " + page_path+previewelement_filename);
                     } catch (err) {
-                      if (err.code !== "EEXIST") {
+                      if (err.code == "EEXIST") {
+                        // if the file exists already, the duplicate should still be marked as being copied
+                        // and the element's html should still be updated
+                        fs.appendFileSync(copylog, assetsource + "\n");
+                        ppt_node = '<a href="' + "/"+page_path+pptelement_filename + '"><span class="title">'+pptelement_filename+'</span><br></a>';
+                        pptelements[i].replaceWith(HTMLParser.parse(ppt_node));
+                      } else {
                         console.log("Couldn't move " + assetsource + " to " + assetdest);
                         console.log(err);
                       }
@@ -310,9 +338,15 @@ fs.readdir(directoryPath, function (err, files) {
                   // move file and change href link
                   try {
                     fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
+                    fs.appendFileSync(copylog, assetsource + "\n");
                     hrefelements[i].setAttribute("href", "/"+page_path+hreffilename);
                   } catch (err) {
-                    if (err.code !== "EEXIST") {
+                    if (err.code == "EEXIST") {
+                      // if the file exists already, the duplicate should still be marked as being copied
+                      // and the element's href should still be updated
+                      fs.appendFileSync(copylog, assetsource + "\n");
+                      hrefelements[i].setAttribute("href", "/"+page_path+hreffilename);
+                    } else {
                       console.log("Couldn't move " + assetsource + " to " + assetdest);
                       console.log(err);
                     }
