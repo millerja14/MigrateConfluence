@@ -44,6 +44,8 @@ if (fs.existsSync(outDirectoryPath)) {
   }
 console.log("Beginning conversion...")
 
+filedict = {};
+
 fs.readdir(directoryPath, function (err, files) {
     //handling error
     if (err) {
@@ -85,8 +87,6 @@ fs.readdir(directoryPath, function (err, files) {
 
                 // for each page, create a dictionary of ids to filenames
                 // when moving a file, use dictionary to convert id to filename
-
-                filedict = {};
 
                 //
                 //
@@ -154,12 +154,13 @@ fs.readdir(directoryPath, function (err, files) {
                   // remove invalid characters and replace whitespaces with hyphens
                   srcfilename = srcfilename.replace(invalidchar,'').replace(/[_\s]/g, '-')+srcext;
 
+                  filedict[srcid] = "/"+page_path+srcid+"-"+srcfilename;
+
                   // define source and destination
                   assetsource = path.join(directoryPath, src_lowerext);
-                  assetdest = path.join(outDirectoryPath, page_path+srcfilename);
+                  assetdest = path.join(outDirectoryPath, filedict[srcid]);
 
                   // move file and rename corresponding src element
-                  filedict[srcid] = "/"+page_path+srcfilename;
                   try {
                     fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
                     fs.appendFileSync(copylog, assetsource + "\n");
@@ -168,6 +169,8 @@ fs.readdir(directoryPath, function (err, files) {
                     if (err.code == "EEXIST") {
                       // if the file exists already, the duplicate should still be marked as being copied
                       // and the element's src should still be updated
+                      console.log("THIS SHOULDNT HAPPEN - src " + filedict[srcid]);
+                      console.log(filedict)
                       fs.appendFileSync(copylog, assetsource + "\n");
                       srcelements[i].setAttribute("src", filedict[srcid]);
                     } else {
@@ -222,10 +225,10 @@ fs.readdir(directoryPath, function (err, files) {
 
                   // move file to destination directory and convert href to new location
                   if (validresourceid.test(data_linked_resource_container_id) && validresourceid.test(data_linked_resource_id)) {
-                    assetsource = path.join(directoryPath, previewelement_path);
-                    assetdest = path.join(outDirectoryPath, page_path+previewelement_filename);
+                    filedict[srcid] = "/"+page_path+srcid+"-"+previewelement_filename;
 
-                    filedict[srcid] = "/"+page_path+previewelement_filename;
+                    assetsource = path.join(directoryPath, previewelement_path);
+                    assetdest = path.join(outDirectoryPath, filedict[srcid]);
 
                     try {
                       fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
@@ -237,6 +240,7 @@ fs.readdir(directoryPath, function (err, files) {
                       if (err.code == "EEXIST") {
                         // if the file exists already, the duplicate should still be marked as being copied
                         // and the element's href should still be updated
+                        console.log("THIS SHOULDNT HAPPEN - preview element " + srcid);
                         fs.appendFileSync(copylog, assetsource + "\n");
                         previewelements[i].setAttribute("href", filedict[srcid]);
                       } else {
@@ -296,10 +300,10 @@ fs.readdir(directoryPath, function (err, files) {
 
                   // move attachment to destination directory and replace preview element with a simple link element
                   if (validresourceid.test(data_page_id) && validresourceid.test(data_attachment_id)) {
-                    assetsource = path.join(directoryPath, pptelement_path);
-                    assetdest = path.join(outDirectoryPath, page_path+pptelement_filename);
+                    filedict[srcid] = "/"+page_path+srcid+"-"+pptelement_filename;
 
-                    filedict[srcid] = "/"+page_path+pptelement_filename;
+                    assetsource = path.join(directoryPath, pptelement_path);
+                    assetdest = path.join(outDirectoryPath, filedict[srcid]);
 
                     try {
                       fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
@@ -311,6 +315,7 @@ fs.readdir(directoryPath, function (err, files) {
                       if (err.code == "EEXIST") {
                         // if the file exists already, the duplicate should still be marked as being copied
                         // and the element's html should still be updated
+                        console.log("THIS SHOULDNT HAPPEN - ppt element " + srcid);
                         fs.appendFileSync(copylog, assetsource + "\n");
                         ppt_node = '<a href="' + filedict[srcid] + '"><span class="title">'+pptelement_filename+'</span><br></a>';
                         pptelements[i].replaceWith(HTMLParser.parse(ppt_node));
@@ -408,12 +413,13 @@ fs.readdir(directoryPath, function (err, files) {
                   // fix invalid characters in filename
                   hreffilename = hreffilename.replace(invalidchar,'').replace(/[_\s]/g, '-');
 
+                  filedict[srcid] = "/"+page_path+srcid+"-"+hreffilename;
+
                   // source and destination paths
                   assetsource = path.join(directoryPath, href);
-                  assetdest = path.join(outDirectoryPath, page_path+hreffilename);
+                  assetdest = path.join(outDirectoryPath, filedict[srcid]);
 
                   // move file and change href link
-                  filedict[srcid] = "/"+page_path+hreffilename;
                   try {
                     fs.copyFileSync(assetsource, assetdest, fs.constants.COPYFILE_EXCL);
                     fs.appendFileSync(copylog, assetsource + "\n");
@@ -422,6 +428,7 @@ fs.readdir(directoryPath, function (err, files) {
                     if (err.code == "EEXIST") {
                       // if the file exists already, the duplicate should still be marked as being copied
                       // and the element's href should still be updated
+                      console.log("THIS SHOULDNT HAPPEN - href " + srcid);
                       fs.appendFileSync(copylog, assetsource + "\n");
                       hrefelements[i].setAttribute("href", filedict[srcid]);
 
