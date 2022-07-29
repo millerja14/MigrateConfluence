@@ -407,8 +407,8 @@ fs.readdir(directoryPath, function (err, files) {
 
                         //console.log("HTML link switched: " + href + " to " + hrefnew);
                       } catch (err) {
-                        console.log("Couldn't read file " + href)
-                        console.log(err)
+                        console.log("Couldn't read file " + href + " on page [" + page_title + "]");
+                        console.log(err);
                       }
                     }
 
@@ -498,7 +498,7 @@ fs.readdir(directoryPath, function (err, files) {
                       } else {
                         console.log("Couldn't move " + assetsource + " to " + assetdest);
                         fs.appendFileSync(lostlog, page_title_spaces +": " + hreffilename_noext+href_ext + "\n");
-                        console.log("Non-greybox missing " + hreffilename + " on page " + page_title_spaces);
+                        console.log("Non-greybox missing " + hreffilename_noext+href_ext + " on page " + page_title_spaces);
                       }
                     }
                   }
