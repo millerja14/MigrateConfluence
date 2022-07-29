@@ -123,7 +123,7 @@ fs.readdir(directoryPath, function (err, files) {
                   }
 
                   // record id and extension
-                  srcid = srcsplit[srcsplit.length-2] + srcsplit[srcsplit.length-2].split(".")[0];
+                  srcid = srcsplit[srcsplit.length-2] + srcsplit[srcsplit.length-1].split(".")[0];
                   if (srcid.length != 18) {
                     console.log("Problem with src src id: " + srcid);
                   }
@@ -396,6 +396,12 @@ fs.readdir(directoryPath, function (err, files) {
                   // if file has already been moved to this page, only need to change link
                   if (srcid in filedict){
                     hrefelements[i].setAttribute("href", filedict[srcid]);
+
+                    // remove if element is in greybox
+                    if (hrefelements[i].parentNode.classList.contains("greybox")) {
+                      hrefelements[i].remove();
+                    }
+
                     continue;
                   }
 
@@ -449,10 +455,17 @@ fs.readdir(directoryPath, function (err, files) {
                 greybox = greyboxes[0];
 
                 if (greybox != null) {
-                  greybox_imgs = greybox.querySelectorAll("img");
-                  for (let i = 0; i < greybox_imgs.length; i++) {
-                    greybox_imgs[i].remove();
+                  greybox_nodes = greybox.childNodes;
+
+                  li_elements = "";
+
+                  for (let i = 0; i < greybox_nodes.length; i++) {
+                    if (greybox_nodes[i].tagName == "A") {
+                      li_elements += "<li>" + greybox_nodes[i].outerHTML +"</li>"
+                    }
+                    greybox_nodes[i].remove();
                   }
+                  greybox.appendChild(HTMLParser.parse("<ul>"+li_elements+"</ul>"));
                 }
 
                 // concatenate HTML contents with page data
