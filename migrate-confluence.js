@@ -124,7 +124,7 @@ fs.readdir(directoryPath, function (err, files) {
 
                   // record id and extension
                   srcid = srcsplit[srcsplit.length-2] + srcsplit[srcsplit.length-1].split(".")[0];
-                  if (srcid.length != 18) {
+                  if (srcid.length != 18 && !srcid.startsWith("templatex")) {
                     console.log("Problem with src src id: " + srcid);
                   }
 
@@ -179,8 +179,7 @@ fs.readdir(directoryPath, function (err, files) {
                     if (err.code == "EEXIST") {
                       // if the file exists already, the duplicate should still be marked as being copied
                       // and the element's src should still be updated
-                      console.log("THIS SHOULDNT HAPPEN - src " + filedict[srcid]);
-                      console.log(filedict)
+                      console.log("File at " + assetdest + " already exists.");
                       fs.appendFileSync(copylog, assetsource + "\n");
                       srcelements[i].setAttribute("src", filedict[srcid]);
                     } else {
@@ -274,7 +273,7 @@ fs.readdir(directoryPath, function (err, files) {
                       if (err.code == "EEXIST") {
                         // if the file exists already, the duplicate should still be marked as being copied
                         // and the element's href should still be updated
-                        console.log("THIS SHOULDNT HAPPEN - preview element " + srcid);
+                        console.log("File at " + assetdest + " already exists.")
                         fs.appendFileSync(copylog, assetsource + "\n");
                         previewelements[i].setAttribute("href", filedict[srcid]);
                       } else {
@@ -346,7 +345,7 @@ fs.readdir(directoryPath, function (err, files) {
                       if (err.code == "EEXIST") {
                         // if the file exists already, the duplicate should still be marked as being copied
                         // and the element's html should still be updated
-                        console.log("THIS SHOULDNT HAPPEN - ppt element " + srcid);
+                        console.log("File at " + assetdest + " already exists.")
                         fs.appendFileSync(copylog, assetsource + "\n");
                         ppt_node = '<a href="' + filedict[srcid] + '"><span class="title">'+pptelement_filename+'</span><br></a>';
                         pptelements[i].replaceWith(HTMLParser.parse(ppt_node));
@@ -478,7 +477,7 @@ fs.readdir(directoryPath, function (err, files) {
                     if (err.code == "EEXIST") {
                       // if the file exists already, the duplicate should still be marked as being copied
                       // and the element's href should still be updated
-                      console.log("THIS SHOULDNT HAPPEN - href " + srcid);
+                      console.log("File at " + assetdest + " already exists.");
                       fs.appendFileSync(copylog, assetsource + "\n");
                       hrefelements[i].setAttribute("href", filedict[srcid]);
 
