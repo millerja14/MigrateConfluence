@@ -152,9 +152,18 @@ fs.readdir(directoryPath, function (err, files) {
                   }
 
                   // remove invalid characters and replace whitespaces with hyphens
-                  srcfilename = srcfilename.replace(invalidchar,'').replace(/[_\s]/g, '-')+srcext;
+                  srcfilename_noext = srcfilename.replace(invalidchar,'').replace(/[_\s]/g, '-');
 
-                  filedict[srcid] = "/"+page_path+srcid+"-"+srcfilename;
+                  // find unused filename
+                  file_inc=1;
+                  srcfilename_noext_test = srcfilename_noext;
+                  while (Object.values(filedict).includes("/"+page_path+srcfilename_noext_test + srcext)) {
+                    srcfilename_noext_test = srcfilename_noext + "_" + i;
+                  }
+                  srcfilename_noext = srcfilename_noext_test;
+
+                  srcfilename = srcfilename_noext + srcext;
+                  filedict[srcid] = "/"+page_path+srcfilename;
 
                   // define source and destination
                   assetsource = path.join(directoryPath, src_lowerext);
@@ -207,7 +216,21 @@ fs.readdir(directoryPath, function (err, files) {
                   previewelement_split = previewelements[i].getAttribute("data-linked-resource-default-alias").split(".");
                   previewelement_ext = "." + previewelement_split[previewelement_split.length-1].toLowerCase();
                   previewelement_filename_full = previewelements[i].getAttribute("data-linked-resource-default-alias").trim().replace(invalidchar,'').replace(/[_\s]/g, '-').replace(/\u03BC|\u00B5/g, "u");
-                  previewelement_filename = previewelement_filename_full.split(".")[0]+previewelement_ext;
+                  previewelement_filename_noext = previewelement_filename_full.split(".")[0];
+                  previewelement_filename = previewelement_filename_noext+previewelement_ext;
+
+                  // remove preview image - instead of clicking an image, replace with a link
+                  preview_img = previewelements[i].querySelector("img");
+                  if (preview_img != null) {
+                    previewelements[i].querySelector("img").remove();
+                  }
+                  preview_label = previewelements[i].querySelector("span.title");
+                  preview_label_node = '<span class="title">'+previewelement_filename+'</span><br>';
+                  if (preview_label == null) {
+                    previewelements[i].appendChild(HTMLParser.parse(preview_label_node));
+                  } else {
+                    preview_label.replaceWith(HTMLParser.parse(preview_label_node));
+                  }
 
                   srcid = data_linked_resource_container_id+data_linked_resource_id;
                   if (srcid.length != 18) {
@@ -225,7 +248,16 @@ fs.readdir(directoryPath, function (err, files) {
 
                   // move file to destination directory and convert href to new location
                   if (validresourceid.test(data_linked_resource_container_id) && validresourceid.test(data_linked_resource_id)) {
-                    filedict[srcid] = "/"+page_path+srcid+"-"+previewelement_filename;
+
+                    // find unused filename
+                    file_inc=1;
+                    previewelement_filename_noext_test = previewelement_filename_noext;
+                    while (Object.values(filedict).includes("/"+page_path+previewelement_filename_noext + previewelement_ext)) {
+                      previewelement_filename_noext_test = previewelement_filename_noext + "_" + i;
+                    }
+                    previewelement_filename_noext = previewelement_filename_noext_test;
+
+                    filedict[srcid] = "/"+page_path+previewelement_filename_noext+previewelement_ext;
 
                     assetsource = path.join(directoryPath, previewelement_path);
                     assetdest = path.join(outDirectoryPath, filedict[srcid]);
@@ -252,20 +284,6 @@ fs.readdir(directoryPath, function (err, files) {
                   } else {
                     console.log("Found invalid file path: " + previewelement_path);
                   }
-
-                  // remove preview image - instead of clicking an image, replace with a link
-                  preview_img = previewelements[i].querySelector("img");
-                  if (preview_img != null) {
-                    previewelements[i].querySelector("img").remove();
-                  }
-                  preview_label = previewelements[i].querySelector("span.title");
-                  preview_label_node = '<span class="title">'+previewelement_filename+'</span><br>';
-                  if (preview_label == null) {
-                    previewelements[i].appendChild(HTMLParser.parse(preview_label_node));
-                  } else {
-                    preview_label.replaceWith(HTMLParser.parse(preview_label_node));
-                  }
-
                 }
 
                 //
@@ -283,7 +301,8 @@ fs.readdir(directoryPath, function (err, files) {
                   pptelement_split = pptelements[i].getAttribute("data-attachment").split(".");
                   pptelement_ext = "." + pptelement_split[pptelement_split.length-1].toLowerCase();
                   pptelement_filename_full = pptelements[i].getAttribute("data-attachment").trim().replace(invalidchar,'').replace(/[_\s]/g, '-').replace(/\u03BC|\u00B5/g, "u");
-                  pptelement_filename = pptelement_filename_full.split(".")[0]+previewelement_ext;
+                  pptelement_filename_noext = pptelement_filename_full.split(".")[0];
+                  pptelement_filename = pptelement_filename_noext+pptelement_ext;
 
                   pptelement_path = "attachments/" + data_page_id + "/" + data_attachment_id + pptelement_ext;
 
@@ -300,7 +319,16 @@ fs.readdir(directoryPath, function (err, files) {
 
                   // move attachment to destination directory and replace preview element with a simple link element
                   if (validresourceid.test(data_page_id) && validresourceid.test(data_attachment_id)) {
-                    filedict[srcid] = "/"+page_path+srcid+"-"+pptelement_filename;
+
+                    // find unused filename
+                    file_inc=1;
+                    pptelement_filename_noext_test = pptelement_filename_noext;
+                    while (Object.values(filedict).includes("/"+page_path+pptelement_filename_noext + pptelement_ext)) {
+                      pptelement_filename_noext_test = pptelement_filename_noext + "_" + i;
+                    }
+                    pptelement_filename_noext = pptelement_filename_noext_test;
+
+                    filedict[srcid] = "/"+page_path+pptelement_filename_noext+pptelement_ext;
 
                     assetsource = path.join(directoryPath, pptelement_path);
                     assetdest = path.join(outDirectoryPath, filedict[srcid]);
@@ -388,10 +416,20 @@ fs.readdir(directoryPath, function (err, files) {
                   // if href is for a file
 
                   // try to get filename from element tag, otherwise use its numeric id
-                  hreffileid = hrefsplit[hrefsplit.length-1];
-                  hreffilename = hrefelements[i].getAttribute("data-linked-resource-default-alias");
-                  if (typeof hreffilename == "undefined") {
-                    hreffilename = hreffileid;
+                  hreffileid = hrefsplit[hrefsplit.length-1].split(".")[0];
+                  if (hrefsplit[hrefsplit.length-1].split(".").length == 1) {
+                    href_ext = "";
+                  } else if (hrefsplit[hrefsplit.length-1].split(".").length == 2) {
+                    href_ext = "." + hrefsplit[hrefsplit.length-1].split(".")[1].toLowerCase();
+                  } else {
+                    throw "Filename href should not include periods.";
+                  }
+
+                  hreffilename_noext = hrefelements[i].getAttribute("data-linked-resource-default-alias");
+                  if (typeof hreffilename_noext == "undefined") {
+                    hreffilename_noext = hreffileid;
+                  } else {
+                    hreffilename_noext = hreffilename_noext.split(".")[0];
                   }
 
                   srcid = hrefsplit[hrefsplit.length-2]+hrefsplit[hrefsplit.length-1].split(".")[0];
@@ -411,9 +449,17 @@ fs.readdir(directoryPath, function (err, files) {
                   }
 
                   // fix invalid characters in filename
-                  hreffilename = hreffilename.replace(invalidchar,'').replace(/[_\s]/g, '-');
+                  hreffilename_noext = hreffilename_noext.replace(invalidchar,'').replace(/[_\s]/g, '-');
 
-                  filedict[srcid] = "/"+page_path+srcid+"-"+hreffilename;
+                  // find unused filename
+                  file_inc=1;
+                  hreffilename_noext_test = hreffilename_noext;
+                  while (Object.values(filedict).includes("/"+page_path+hreffilename_noext_test + href_ext)) {
+                    hreffilename_noext_test = hreffilename_noext + "_" + i;
+                  }
+                  hreffilename_noext = hreffilename_noext_test;
+
+                  filedict[srcid] = "/"+page_path+hreffilename_noext+href_ext;
 
                   // source and destination paths
                   assetsource = path.join(directoryPath, href);
@@ -441,12 +487,13 @@ fs.readdir(directoryPath, function (err, files) {
 
                     } else {
                       if (hrefelements[i].parentNode.classList.contains("greybox")) {
-                        fs.appendFileSync(lostlog, page_title_spaces +": " + hreffilename + "(greybox)" + "\n");
+                        // don't raise warning if greybox source is missing
+                        fs.appendFileSync(lostlog, page_title_spaces +": " + hreffilename_noext+href_ext + "(greybox)" + "\n");
                         hrefelements[i].remove();
                         // console.log("Greybox missing file at " + page_title_spaces);
                       } else {
                         console.log("Couldn't move " + assetsource + " to " + assetdest);
-                        fs.appendFileSync(lostlog, page_title_spaces +": " + hreffilename + "\n");
+                        fs.appendFileSync(lostlog, page_title_spaces +": " + hreffilename_noext+href_ext + "\n");
                         console.log("Non-greybox missing " + hreffilename + " on page " + page_title_spaces);
                       }
                     }
@@ -480,7 +527,7 @@ fs.readdir(directoryPath, function (err, files) {
 
                 // write page after beautifying
                 fs.writeFileSync(path.join(outDirectoryPath, page_path + page_title + ".html"), beautify(page_data, { indent_size: 2, space_in_empty_paren: true }));
-                console.log("Imported Page: [" + page_title + "]");
+                console.log("Migrated Page: [" + page_title + "]");
             });
         }
     });
