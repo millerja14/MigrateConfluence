@@ -158,7 +158,8 @@ fs.readdir(directoryPath, function (err, files) {
                   file_inc=1;
                   srcfilename_noext_test = srcfilename_noext;
                   while (Object.values(filedict).includes("/"+page_path+srcfilename_noext_test + srcext)) {
-                    srcfilename_noext_test = srcfilename_noext + "_" + i;
+                    srcfilename_noext_test = srcfilename_noext + "_" + file_inc;
+                    file_inc+=1;
                   }
                   srcfilename_noext = srcfilename_noext_test;
 
@@ -252,8 +253,9 @@ fs.readdir(directoryPath, function (err, files) {
                     // find unused filename
                     file_inc=1;
                     previewelement_filename_noext_test = previewelement_filename_noext;
-                    while (Object.values(filedict).includes("/"+page_path+previewelement_filename_noext + previewelement_ext)) {
-                      previewelement_filename_noext_test = previewelement_filename_noext + "_" + i;
+                    while (Object.values(filedict).includes("/"+page_path+previewelement_filename_noext_test + previewelement_ext)) {
+                      previewelement_filename_noext_test = previewelement_filename_noext + "_" + file_inc;
+                      file_inc+=1;
                     }
                     previewelement_filename_noext = previewelement_filename_noext_test;
 
@@ -323,8 +325,9 @@ fs.readdir(directoryPath, function (err, files) {
                     // find unused filename
                     file_inc=1;
                     pptelement_filename_noext_test = pptelement_filename_noext;
-                    while (Object.values(filedict).includes("/"+page_path+pptelement_filename_noext + pptelement_ext)) {
-                      pptelement_filename_noext_test = pptelement_filename_noext + "_" + i;
+                    while (Object.values(filedict).includes("/"+page_path+pptelement_filename_noext_test + pptelement_ext)) {
+                      pptelement_filename_noext_test = pptelement_filename_noext + "_" + file_inc;
+                      file_inc+=1;
                     }
                     pptelement_filename_noext = pptelement_filename_noext_test;
 
@@ -455,7 +458,8 @@ fs.readdir(directoryPath, function (err, files) {
                   file_inc=1;
                   hreffilename_noext_test = hreffilename_noext;
                   while (Object.values(filedict).includes("/"+page_path+hreffilename_noext_test + href_ext)) {
-                    hreffilename_noext_test = hreffilename_noext + "_" + i;
+                    hreffilename_noext_test = hreffilename_noext + "_" + file_inc;
+                    file_inc+=1;
                   }
                   hreffilename_noext = hreffilename_noext_test;
 
