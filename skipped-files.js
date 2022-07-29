@@ -1,3 +1,6 @@
+// Moves un-linked files into the wikijs scrape directory under the subdirectory "UnlinkedAssets"
+// Written by Jacob M. Miller, Cleland Lab, UChicago
+
 // requirements
 const path = require('path');
 const fs = require('fs');
